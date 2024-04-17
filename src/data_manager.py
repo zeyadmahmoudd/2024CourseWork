@@ -26,7 +26,7 @@ class BaseDataManager:
         color_aug=False,  # randomly alter the intensities of RGB channels
         crop=False, #crop images at random location to speciefied size
         blur=False, #blur images with a given kernel size and min and max std
-        vertical_flip=False #randomly vertical flip images
+        vertical_flip=False, #randomly vertical flip images
         num_instances=4,  # number of instances per identity (for RandomIdentitySampler)
         **kwargs,
     ):
