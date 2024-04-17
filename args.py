@@ -65,18 +65,12 @@ def argument_parser():
     )
     parser.add_argument(
         "--crop",
-        default=[160, 160],
-        nargs="+",
-        type=int,
         action="store_true",
         help="randomly crop images",
     )
 
     parser.add_argument(
         "--blur",
-        default=[3, 0.5, 1],
-        nargs="+",
-        type=int,
         action="store_true",
         help="blur images",
     )
