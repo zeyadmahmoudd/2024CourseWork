@@ -2,50 +2,75 @@
 
 import torch.nn as nn
 import torchvision.models as tvmodels
-from torchvision.models import VGG16_Weights, MobileNet_V3_Small_Weights, ViT_B_16_Weights
+
+
+__all__ = ["mobilenet_v3_small", "vgg16"]
+
 
 class TorchVisionModel(nn.Module):
-    def __init__(self, model_func, num_classes, loss, weights=None, **kwargs):
+    def __init__(self, name, num_classes, loss, pretrained=True, **kwargs):
         super().__init__()
+
         self.loss = loss
-        self.backbone = model_func(weights=weights) if weights else model_func()
 
-        # Handling for Vision Transformers
-        if 'VisionTransformer' in model_func.__name__:
-            # Attempt to access different possible names for the classifier head
-            if hasattr(self.backbone, 'head'):
-                self.feature_dim = self.backbone.head.in_features
-                self.backbone.head = nn.Identity()
-            elif hasattr(self.backbone, 'fc'):  # Some models might use 'fc' instead of 'head'
-                self.feature_dim = self.backbone.fc.in_features
-                self.backbone.fc = nn.Identity()
-            else:
-                raise AttributeError("Classifier head not found in Vision Transformer model")
+        # Dynamically load the model from torchvision's dictionary
+        if pretrained:
+            # Use pretrained weights if available
+            model_func = tvmodels.__dict__[name]
+            self.backbone = model_func(weights=model_func.DEFAULT)
         else:
-            # Handling for traditional CNN models
-            if hasattr(self.backbone, 'classifier') and isinstance(self.backbone.classifier, nn.Sequential):
-                self.feature_dim = self.backbone.classifier[0].in_features
-                self.backbone.classifier = nn.Identity()
-            elif hasattr(self.backbone, 'fc'):
-                self.feature_dim = self.backbone.fc.in_features
-                self.backbone.fc = nn.Identity()
+            # Load the model without pretrained weights
+            self.backbone = tvmodels.__dict__[name](pretrained=False)
 
+        # Check if the model is a Vision Transformer
+        if 'vit' in name:
+            # For Vision Transformers, the final layer is usually named 'head'
+            self.feature_dim = self.backbone.heads[0].in_features
+            self.backbone.heads = nn.Identity()
+        else:
+            # For CNNs, replace the classifier
+            self.feature_dim = self.backbone.classifier[0].in_features
+            self.backbone.classifier = nn.Identity()
+
+        # New classifier for the specified number of classes
         self.classifier = nn.Linear(self.feature_dim, num_classes)
-
     def forward(self, x):
-        features = self.backbone(x)
+        v = self.backbone(x)
+
         if not self.training:
-            return features
-        return self.classifier(features)
+            return v
 
-def vgg16(num_classes, loss={"xent"}, weights=VGG16_Weights.DEFAULT, **kwargs):
-    return TorchVisionModel(tvmodels.vgg16, num_classes, loss, weights, **kwargs)
+        y = self.classifier(v)
 
-def mobilenet_v3_small(num_classes, loss={"xent"}, weights=MobileNet_V3_Small_Weights.DEFAULT, **kwargs):
-    return TorchVisionModel(tvmodels.mobilenet_v3_small, num_classes, loss, weights, **kwargs)
+        if self.loss == {"xent"}:
+            return y
+        elif self.loss == {"xent", "htri"}:
+            return y, v
+        else:
+            raise KeyError(f"Unsupported loss: {self.loss}")
 
-def vit_b_16(num_classes, loss={"xent"}, weights=ViT_B_16_Weights.DEFAULT, **kwargs):
-    return TorchVisionModel(tvmodels.vit_b_16, num_classes, loss, weights, **kwargs)
+
+def vgg16(num_classes, loss={"xent"}, pretrained=True, **kwargs):
+    model = TorchVisionModel(
+        "vgg16",
+        num_classes=num_classes,
+        loss=loss,
+        pretrained=pretrained,
+        **kwargs,
+    )
+    return model
+
+
+def mobilenet_v3_small(num_classes, loss={"xent"}, pretrained=True, **kwargs):
+    model = TorchVisionModel(
+        "mobilenet_v3_small",
+        num_classes=num_classes,
+        loss=loss,
+        pretrained=pretrained,
+        **kwargs,
+    )
+    return model
+
 
 # Define any models supported by torchvision bellow
 # https://pytorch.org/vision/0.11/models.html
