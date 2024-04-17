@@ -4,19 +4,27 @@ import torch.nn as nn
 import torchvision.models as tvmodels
 from torchvision.models import VGG16_Weights, MobileNet_V3_Small_Weights, ViT_B_16_Weights
 
+import torch.nn as nn
+import torchvision.models as tvmodels
+from torchvision.models import VGG16_Weights, MobileNet_V3_Small_Weights, ViT_B_16_Weights
+
 class TorchVisionModel(nn.Module):
     def __init__(self, model_func, num_classes, loss, weights=None, **kwargs):
         super().__init__()
         self.loss = loss
-        if weights is not None:
+        if weights:
             self.backbone = model_func(weights=weights)
         else:
             self.backbone = model_func(weights=None)
 
-        # Adjust the model depending on its type
-        if 'VisionTransformer' in model_func.__name__:
-            self.feature_dim = self.backbone.head.in_features
-            self.backbone.head = nn.Identity()
+        # Determine if the backbone is a Vision Transformer
+        if isinstance(self.backbone, tvmodels.VisionTransformer):
+            # Assuming that the last layer before the classifier is named 'head'
+            if hasattr(self.backbone, 'head'):
+                self.feature_dim = self.backbone.head.in_features
+                self.backbone.head = nn.Identity()  # Replace the classification head with Identity
+            else:
+                raise AttributeError("Expected 'head' not found in Vision Transformer model")
         else:
             # Handles traditional models with a classifier or fc layer
             if hasattr(self.backbone, 'classifier') and isinstance(self.backbone.classifier, nn.Sequential):
@@ -25,6 +33,8 @@ class TorchVisionModel(nn.Module):
             elif hasattr(self.backbone, 'fc'):
                 self.feature_dim = self.backbone.fc.in_features
                 self.backbone.fc = nn.Identity()
+            else:
+                raise ValueError("Unsupported model type for this setup.")
 
         self.classifier = nn.Linear(self.feature_dim, num_classes)
 
