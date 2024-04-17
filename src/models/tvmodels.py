@@ -33,7 +33,6 @@ class TorchVisionModel(nn.Module):
         else:
             raise KeyError(f"Unsupported loss: {self.loss}")
 
-
 def vgg16(num_classes, loss={"xent"}, pretrained=True, **kwargs):
     model = TorchVisionModel(
         "vgg16",
