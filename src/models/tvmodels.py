@@ -1,5 +1,3 @@
-# Copyright (c) EEEM071, University of Surrey
-
 import torch.nn as nn
 import torchvision.models as tvmodels
 
@@ -8,32 +6,18 @@ __all__ = ["mobilenet_v3_small", "vgg16"]
 
 
 class TorchVisionModel(nn.Module):
-    def __init__(self, name, num_classes, loss, pretrained=True, **kwargs):
+    def __init__(self, name, num_classes, loss, pretrained, **kwargs):
         super().__init__()
 
         self.loss = loss
+        self.backbone = tvmodels.__dict__[name](pretrained=pretrained)
+        self.feature_dim = self.backbone.classifier[0].in_features
 
-        # Dynamically load the model from torchvision's dictionary
-        if pretrained:
-            # Use pretrained weights if available
-            model_func = tvmodels.__dict__[name]
-            self.backbone = model_func(weights=model_func.DEFAULT)
-        else:
-            # Load the model without pretrained weights
-            self.backbone = tvmodels.__dict__[name](pretrained=False)
-
-        # Check if the model is a Vision Transformer
-        if 'vit' in name:
-            # For Vision Transformers, the final layer is usually named 'head'
-            self.feature_dim = self.backbone.heads[0].in_features
-            self.backbone.heads = nn.Identity()
-        else:
-            # For CNNs, replace the classifier
-            self.feature_dim = self.backbone.classifier[0].in_features
-            self.backbone.classifier = nn.Identity()
-
-        # New classifier for the specified number of classes
+        # overwrite the classifier used for ImageNet pretrianing
+        # nn.Identity() will do nothing, it's just a place-holder
+        self.backbone.classifier = nn.Identity()
         self.classifier = nn.Linear(self.feature_dim, num_classes)
+
     def forward(self, x):
         v = self.backbone(x)
 
@@ -70,10 +54,6 @@ def mobilenet_v3_small(num_classes, loss={"xent"}, pretrained=True, **kwargs):
         **kwargs,
     )
     return model
-
-def vit_b_16(num_classes, loss={"xent"}, pretrained=True, **kwargs):
-    return TorchVisionModel("vit_b_16", num_classes, loss, pretrained, **kwargs)
-
 
 
 # Define any models supported by torchvision bellow
