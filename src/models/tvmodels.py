@@ -48,6 +48,15 @@ class TorchVisionModel(nn.Module):
         else:
             raise KeyError(f"Unsupported loss: {self.loss}")
 
+def vgg16(num_classes, loss={"xent"}, pretrained=True, **kwargs):
+    model = TorchVisionModel(
+        "vgg16",
+        num_classes=num_classes,
+        loss=loss,
+        pretrained=pretrained,
+        **kwargs,
+    )
+    return model
 
 def mobilenet_v3_small(num_classes, loss={"xent"}, pretrained=True, **kwargs):
     model = TorchVisionModel(
