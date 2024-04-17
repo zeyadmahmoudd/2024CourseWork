@@ -13,11 +13,15 @@ class TorchVisionModel(nn.Module):
 
         self.loss = loss
         self.backbone = tvmodels.__dict__[name](pretrained=pretrained)
-        self.feature_dim = self.backbone.classifier[0].in_features
-
-        # overwrite the classifier used for ImageNet pretrianing
-        # nn.Identity() will do nothing, it's just a place-holder
-        self.backbone.classifier = nn.Identity()
+        
+        if 'vit' in name:
+            # Normally, ViT models in torchvision have a head with nn.Linear
+            self.feature_dim = self.backbone.head.in_features
+            self.backbone.head = nn.Identity()  # Replace the head with an Identity
+        else:
+            self.feature_dim = self.backbone.classifier[0].in_features
+            self.backbone.classifier = nn.Identity()  # For CNNs, replace the classifier
+        
         self.classifier = nn.Linear(self.feature_dim, num_classes)
 
     def forward(self, x):
