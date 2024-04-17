@@ -65,27 +65,29 @@ def argument_parser():
     )
     parser.add_argument(
         "--crop",
+        default=[160, 160],
+        nargs="+",
+        type=int,
         action="store_true",
-        help="randomly alter the intensities of RGB channels",
+        help="randomly crop images",
     )
 
     parser.add_argument(
-        "--color-aug",
+        "--blur",
+        default=[3, 0.5, 1],
+        nargs="+",
+        type=int,
         action="store_true",
-        help="randomly alter the intensities of RGB channels",
+        help="blur images",
     )
 
     parser.add_argument(
-        "--color-aug",
+        "--vertical-flip",
         action="store_true",
-        help="randomly alter the intensities of RGB channels",
+        help="randomly vertical flip images",
     )
 
-    parser.add_argument(
-        "--color-aug",
-        action="store_true",
-        help="randomly alter the intensities of RGB channels",
-    )
+    
 
     # ************************************************************
     # Optimization options
