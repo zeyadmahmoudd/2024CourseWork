@@ -129,6 +129,9 @@ def build_transforms(
     random_erase=False,  # use random erasing for data augmentation
     color_jitter=False,  # randomly change the brightness, contrast and saturation
     color_aug=False,  # randomly alter the intensities of RGB channels
+    crop=False, #crop images at random location to speciefied size
+    blur=False, #blur images with a given kernel size and min and max std
+    vertical_flip=False #randomly vertical flip images
     **kwargs
 ):
     # use imagenet mean and std as default
@@ -151,6 +154,12 @@ def build_transforms(
     transform_train += [normalize]
     if random_erase:
         transform_train += [RandomErasing()]
+    if crop:
+        transform_train += [T.RandomResizedCrop(160)]
+    if blur:
+        transform_train += [T.GaussianBlur(3)]
+    if vertical_flip:
+        transform_train += [T.RandomVerticalFlip()]
     transform_train = T.Compose(transform_train)
 
     # build test transformations
