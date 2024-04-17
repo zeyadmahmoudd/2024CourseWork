@@ -22,7 +22,7 @@ __model_factory = {
     "mobilenet_v3_small": mobilenet_v3_small,
     "vgg16": vgg16,
     "googlenet": googlenet,
-    "densenet161" : densenet,
+    "densenet161" : densenet161,
 
 }
 
