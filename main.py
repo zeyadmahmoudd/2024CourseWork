@@ -323,7 +323,7 @@ def test(
     if return_distmat:
         return distmat
     return cmc[0]
-    return cv
+    
 
 
 if __name__ == "__main__":
