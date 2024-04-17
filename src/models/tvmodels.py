@@ -6,38 +6,41 @@ __all__ = ["mobilenet_v3_small", "vgg16", "googlenet", "densenet161"]
 
 
 class TorchVisionModel(nn.Module):
-    self.loss = loss
-    self.backbone = tvmodels.__dict__[name](pretrained=pretrained)
-        
-        # Handling different models with different classifier attributes
-    if name in ['vgg16', 'mobilenet_v3_small']:
-        self.feature_dim = self.backbone.classifier[0].in_features
-        self.backbone.classifier = nn.Identity()
-    elif name == 'googlenet':
-        self.feature_dim = self.backbone.fc.in_features
-        self.backbone.fc = nn.Identity()
-    elif name == 'densenet161':
-        self.feature_dim = self.backbone.classifier.in_features
-        self.backbone.classifier = nn.Identity()
-    else:
-        raise ValueError("Unsupported model name")
+    def __init__(self, name, num_classes, loss, pretrained, **kwargs):
+        super().__init__()
 
-    self.classifier = nn.Linear(self.feature_dim, num_classes)
-
-    def forward(self, x):
-        v = self.backbone(x)
-
-        if not self.training:
-            return v
-
-        y = self.classifier(v)
-
-        if self.loss == {"xent"}:
-            return y
-        elif self.loss == {"xent", "htri"}:
-            return y, v
+        self.loss = loss
+        self.backbone = tvmodels.__dict__[name](pretrained=pretrained)
+            
+            # Handling different models with different classifier attributes
+        if name in ['vgg16', 'mobilenet_v3_small']:
+            self.feature_dim = self.backbone.classifier[0].in_features
+            self.backbone.classifier = nn.Identity()
+        elif name == 'googlenet':
+            self.feature_dim = self.backbone.fc.in_features
+            self.backbone.fc = nn.Identity()
+        elif name == 'densenet161':
+            self.feature_dim = self.backbone.classifier.in_features
+            self.backbone.classifier = nn.Identity()
         else:
-            raise KeyError(f"Unsupported loss: {self.loss}")
+            raise ValueError("Unsupported model name")
+    
+        self.classifier = nn.Linear(self.feature_dim, num_classes)
+    
+        def forward(self, x):
+            v = self.backbone(x)
+    
+            if not self.training:
+                return v
+    
+            y = self.classifier(v)
+    
+            if self.loss == {"xent"}:
+                return y
+            elif self.loss == {"xent", "htri"}:
+                return y, v
+            else:
+                raise KeyError(f"Unsupported loss: {self.loss}")
 
 def vgg16(num_classes, loss={"xent"}, pretrained=True, **kwargs):
     model = TorchVisionModel(
