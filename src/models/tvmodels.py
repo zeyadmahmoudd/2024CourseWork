@@ -16,8 +16,8 @@ class TorchVisionModel(nn.Module):
         
         if 'vit' in name:
             # Normally, ViT models in torchvision have a head with nn.Linear
-            self.feature_dim = self.backbone.head.in_features
-            self.backbone.head = nn.Identity()  # Replace the head with an Identity
+            self.feature_dim = self.backbone.heads.in_features
+            self.backbone.heads = nn.Identity()  # Replace the head with an Identity
         else:
             self.feature_dim = self.backbone.classifier[0].in_features
             self.backbone.classifier = nn.Identity()  # For CNNs, replace the classifier
