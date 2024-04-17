@@ -64,6 +64,24 @@ def argument_parser():
         help="randomly change the brightness, contrast and saturation",
     )
     parser.add_argument(
+        "--crop",
+        action="store_true",
+        help="randomly alter the intensities of RGB channels",
+    )
+
+    parser.add_argument(
+        "--color-aug",
+        action="store_true",
+        help="randomly alter the intensities of RGB channels",
+    )
+
+    parser.add_argument(
+        "--color-aug",
+        action="store_true",
+        help="randomly alter the intensities of RGB channels",
+    )
+
+    parser.add_argument(
         "--color-aug",
         action="store_true",
         help="randomly alter the intensities of RGB channels",
