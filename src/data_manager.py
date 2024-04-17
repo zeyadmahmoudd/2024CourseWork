@@ -24,6 +24,9 @@ class BaseDataManager:
         random_erase=False,  # use random erasing for data augmentation
         color_jitter=False,  # randomly change the brightness, contrast and saturation
         color_aug=False,  # randomly alter the intensities of RGB channels
+        crop=False, #crop images at random location to speciefied size
+        blur=False, #blur images with a given kernel size and min and max std
+        vertical_flip=False #randomly vertical flip images
         num_instances=4,  # number of instances per identity (for RandomIdentitySampler)
         **kwargs,
     ):
@@ -40,6 +43,9 @@ class BaseDataManager:
         self.random_erase = random_erase
         self.color_jitter = color_jitter
         self.color_aug = color_aug
+        self.crop = crop
+        self.blur = blur
+        self.vertical_flip = vertical_flip
         self.num_instances = num_instances
 
         transform_train, transform_test = build_transforms(
@@ -48,6 +54,9 @@ class BaseDataManager:
             random_erase=self.random_erase,
             color_jitter=self.color_jitter,
             color_aug=self.color_aug,
+            blur = self.blur,
+            crop = self.crop,
+            vertical_flip = self.vertical_flip
         )
         self.transform_train = transform_train
         self.transform_test = transform_test
