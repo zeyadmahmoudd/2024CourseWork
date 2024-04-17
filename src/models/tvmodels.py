@@ -27,20 +27,20 @@ class TorchVisionModel(nn.Module):
     
         self.classifier = nn.Linear(self.feature_dim, num_classes)
     
-        def forward(self, x):
-            v = self.backbone(x)
+    def forward(self, x):
+        v = self.backbone(x)
     
-            if not self.training:
-                return v
+        if not self.training:
+            return v
     
-            y = self.classifier(v)
+        y = self.classifier(v)
     
-            if self.loss == {"xent"}:
-                return y
-            elif self.loss == {"xent", "htri"}:
-                return y, v
-            else:
-                raise KeyError(f"Unsupported loss: {self.loss}")
+        if self.loss == {"xent"}:
+            return y
+        elif self.loss == {"xent", "htri"}:
+            return y, v
+        else:
+            raise KeyError(f"Unsupported loss: {self.loss}")
 
 def vgg16(num_classes, loss={"xent"}, pretrained=True, **kwargs):
     model = TorchVisionModel(
