@@ -6,16 +6,22 @@ __all__ = ["mobilenet_v3_small", "vgg16", "googlenet", "densenet161"]
 
 
 class TorchVisionModel(nn.Module):
-    def __init__(self, name, num_classes, loss, pretrained, **kwargs):
-        super().__init__()
-
-        self.loss = loss
+    self.loss = loss
         self.backbone = tvmodels.__dict__[name](pretrained=pretrained)
-        self.feature_dim = self.backbone.classifier[0].in_features
+        
+        # Handling different models with different classifier attributes
+        if name in ['vgg16', 'mobilenet_v3_small']:
+            self.feature_dim = self.backbone.classifier[0].in_features
+            self.backbone.classifier = nn.Identity()
+        elif name == 'googlenet':
+            self.feature_dim = self.backbone.fc.in_features
+            self.backbone.fc = nn.Identity()
+        elif name == 'densenet161':
+            self.feature_dim = self.backbone.classifier.in_features
+            self.backbone.classifier = nn.Identity()
+        else:
+            raise ValueError("Unsupported model name")
 
-        # overwrite the classifier used for ImageNet pretrianing
-        # nn.Identity() will do nothing, it's just a place-holder
-        self.backbone.classifier = nn.Identity()
         self.classifier = nn.Linear(self.feature_dim, num_classes)
 
     def forward(self, x):
