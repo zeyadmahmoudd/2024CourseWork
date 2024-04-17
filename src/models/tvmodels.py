@@ -2,30 +2,31 @@
 
 import torch.nn as nn
 import torchvision.models as tvmodels
+from torchvision.models import ViT_B_16_Weights
 
 __all__ = ["mobilenet_v3_small", "vgg16", "vit_b_16"]
 
 class TorchVisionModel(nn.Module):
-    def __init__(self, name, num_classes, loss, pretrained, **kwargs):
+    def __init__(self, model_func, weights, num_classes, loss, **kwargs):
         super().__init__()
 
         self.loss = loss
-        # Load the model dynamically from torchvision
-        self.backbone = tvmodels.__dict__[name](pretrained=pretrained)
 
-        # Determine if the model is a Vision Transformer
-        if 'vit' in name:
-            # For Vision Transformers in torchvision, the classification head is usually named `heads`
-            if hasattr(self.backbone, 'heads'):
-                self.feature_dim = self.backbone.heads.in_features
-                self.backbone.heads = nn.Identity()  # Replace the head with an Identity
-            else:
-                raise AttributeError("The model does not have 'heads'. Check the model architecture.")
+        # Load the model with specified weights
+        if weights:
+            self.backbone = model_func(weights=weights)
         else:
-            # For CNN models like MobileNet and VGG
+            self.backbone = model_func()
+
+        # Adjusting the model depending on whether it's a Vision Transformer
+        if isinstance(self.backbone, tvmodels.VisionTransformer):
+            self.feature_dim = self.backbone.heads[1].in_features  # Usually, the classifier is the second last layer in Vision Transformers
+            self.backbone.heads = nn.Identity()  # Replace the head with Identity
+        else:
+            # For CNNs like MobileNet and VGG
             if hasattr(self.backbone, 'classifier') and isinstance(self.backbone.classifier, nn.Sequential):
                 self.feature_dim = self.backbone.classifier[0].in_features
-                self.backbone.classifier = nn.Identity()  # Replace the classifier with an Identity
+                self.backbone.classifier = nn.Identity()  # Replace classifier with Identity
             elif hasattr(self.backbone, 'fc'):
                 self.feature_dim = self.backbone.fc.in_features
                 self.backbone.fc = nn.Identity()
@@ -46,16 +47,6 @@ class TorchVisionModel(nn.Module):
             return y, v
         else:
             raise KeyError(f"Unsupported loss: {self.loss}")
-
-def vgg16(num_classes, loss={"xent"}, pretrained=True, **kwargs):
-    model = TorchVisionModel(
-        "vgg16",
-        num_classes=num_classes,
-        loss=loss,
-        pretrained=pretrained,
-        **kwargs,
-    )
-    return model
 
 
 def mobilenet_v3_small(num_classes, loss={"xent"}, pretrained=True, **kwargs):
