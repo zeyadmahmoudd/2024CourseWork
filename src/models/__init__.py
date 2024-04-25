@@ -8,7 +8,7 @@ from .resnet import (
     resnet50,
     resnet50_fc512,
 )
-from .tvmodels import mobilenet_v3_small, vgg16, googlenet, densenet161
+from .tvmodels import mobilenet_v3_small, vgg16, googlenet, densenet161, vit_b_16
 
 
 __model_factory = {
@@ -23,7 +23,7 @@ __model_factory = {
     "vgg16": vgg16,
     "googlenet": googlenet,
     "densenet161" : densenet161,
-
+    "vit_b_16": vit_b_16,
 }
 
 
