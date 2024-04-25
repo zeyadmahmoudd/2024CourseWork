@@ -1,46 +1,40 @@
-import torch.nn as nn
-import torchvision.models as tvmodels
-
-
-__all__ = ["mobilenet_v3_small", "vgg16", "googlenet", "densenet161"]
-
-
 class TorchVisionModel(nn.Module):
     def __init__(self, name, num_classes, loss, pretrained, **kwargs):
         super().__init__()
 
+
         self.loss = loss
         self.backbone = tvmodels.__dict__[name](pretrained=pretrained)
-            
-            # Handling different models with different classifier attributes
-        if name in ['vgg16', 'mobilenet_v3_small']:
+        if 'vit' in name:
+            # For ViT models, the classifier attribute is different
+            self.feature_dim = self.backbone.heads[0].in_features
+            self.backbone.heads = nn.Identity()
+        else:
             self.feature_dim = self.backbone.classifier[0].in_features
             self.backbone.classifier = nn.Identity()
-        elif name == 'googlenet':
-            self.feature_dim = self.backbone.fc.in_features
-            self.backbone.fc = nn.Identity()
-        elif name == 'densenet161':
-            self.feature_dim = self.backbone.classifier.in_features
-            self.backbone.classifier = nn.Identity()
-        else:
-            raise ValueError("Unsupported model name")
-    
         self.classifier = nn.Linear(self.feature_dim, num_classes)
-    
+
+
     def forward(self, x):
         v = self.backbone(x)
-    
+
+
         if not self.training:
             return v
-    
+
+
         y = self.classifier(v)
-    
+
+
         if self.loss == {"xent"}:
             return y
         elif self.loss == {"xent", "htri"}:
             return y, v
         else:
             raise KeyError(f"Unsupported loss: {self.loss}")
+
+
+
 
 def vgg16(num_classes, loss={"xent"}, pretrained=True, **kwargs):
     model = TorchVisionModel(
@@ -53,6 +47,8 @@ def vgg16(num_classes, loss={"xent"}, pretrained=True, **kwargs):
     return model
 
 
+
+
 def mobilenet_v3_small(num_classes, loss={"xent"}, pretrained=True, **kwargs):
     model = TorchVisionModel(
         "mobilenet_v3_small",
@@ -62,6 +58,18 @@ def mobilenet_v3_small(num_classes, loss={"xent"}, pretrained=True, **kwargs):
         **kwargs,
     )
     return model
+
+
+def vit_b_16(num_classes, loss={"xent"}, pretrained=True, **kwargs):
+    model = TorchVisionModel(
+        "vit_b_16",
+        num_classes=num_classes,
+        loss=loss,
+        pretrained=pretrained,
+        **kwargs,
+    )
+    return model
+
 
 def densenet161(num_classes, loss={"xent"}, pretrained=True, **kwargs):
     model = TorchVisionModel(
